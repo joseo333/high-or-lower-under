@@ -159,70 +159,148 @@ def select_random_artists():
     selected = random.sample(artist_names, 2)
     return selected[0], selected[1]
 
+
 def display_artist(artist_name, show_listeners=False, is_button=False):
-    """Display artist information as a clean card with photo and optional listener count"""
+    """Display artist information as a High or Lower style card"""
     artist_data = ARTISTS[artist_name]
     
     # Add CSS styles for the card
     st.markdown("""
     <style>
-    .artist-card {
-        text-align: center;
-        padding: 20px;
-        border-radius: 15px;
-        background-color: #f9f9f9;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        border: 2px solid #e0e0e0;
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+    
+    .artist-container {
+        position: relative;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        margin: 15px 0;
+        overflow: hidden;
+        animation: slideIn 0.6s ease-out;
         transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
     }
-    .artist-card:hover {
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        border-color: #007bff;
+    
+    .artist-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        animation: pulse 1.5s infinite;
     }
+    
+    .artist-name-box {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 15px;
+        text-align: center;
+        border-bottom: 3px solid #ff4757;
+        margin: 0;
+    }
+    
     .artist-name {
-        font-size: 24px;
-        font-weight: bold;
-        margin-top: 15px;
-        margin-bottom: 8px;
-        color: #1a1a1a;
+        font-size: 22px;
+        font-weight: 900;
+        color: #2c3e50;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
     }
+    
+    .artist-image-container {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        background: #000;
+    }
+    
     .artist-listeners {
+        background: rgba(0, 0, 0, 0.8);
+        color: #ffffff;
+        padding: 10px 15px;
+        text-align: center;
         font-size: 16px;
-        color: #666;
-        margin-top: 5px;
-        font-weight: 500;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        margin: 0;
     }
+    
     .artist-listeners-hidden {
+        background: rgba(255, 71, 87, 0.9);
+        color: #ffffff;
+        padding: 10px 15px;
+        text-align: center;
         font-size: 16px;
-        color: #999;
-        margin-top: 5px;
-        font-weight: 500;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        margin: 0;
+    }
+    
+    .image-fallback {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 300px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .fallback-icon {
+        font-size: 80px;
+        margin-bottom: 15px;
+        opacity: 0.8;
+    }
+    
+    .fallback-text {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 14px;
+        font-weight: 600;
     }
     </style>
     """, unsafe_allow_html=True)
     
     # Start the card container
-    st.markdown('<div class="artist-card">', unsafe_allow_html=True)
+    st.markdown('<div class="artist-container">', unsafe_allow_html=True)
+    
+    # Artist name box (encima de la imagen)
+    st.markdown(f'<div class="artist-name-box"><div class="artist-name">{artist_name.title()}</div></div>', unsafe_allow_html=True)
+    
+    # Image container
+    st.markdown('<div class="artist-image-container">', unsafe_allow_html=True)
     
     # Try to display the image, with fallback if image doesn't exist
     try:
-        # Check both root directory and images/ directory
         image_path = artist_data["photo"]
         try:
-            st.image(image_path, width=200, use_container_width=True)
+            st.image(image_path, width=300)
         except:
             try:
-                st.image(f"images/{image_path}", width=200, use_container_width=True)
+                st.image(f"images/{image_path}", width=300)
             except:
-                st.markdown('<div style="font-size: 60px; margin: 20px 0;">🎵</div>', unsafe_allow_html=True)
-                st.markdown('<div style="color: #6c757d; font-size: 14px;">(Imagen no encontrada)</div>', unsafe_allow_html=True)
+                st.markdown('''
+                <div class="image-fallback">
+                    <div class="fallback-icon">🎵</div>
+                    <div class="fallback-text">Imagen no encontrada</div>
+                </div>
+                ''', unsafe_allow_html=True)
     except:
-        st.markdown('<div style="font-size: 60px; margin: 20px 0;">🎵</div>', unsafe_allow_html=True)
-        st.markdown('<div style="color: #6c757d; font-size: 14px;">(Imagen no encontrada)</div>', unsafe_allow_html=True)
+        st.markdown('''
+        <div class="image-fallback">
+            <div class="fallback-icon">🎵</div>
+            <div class="fallback-text">Imagen no encontrada</div>
+        </div>
+        ''', unsafe_allow_html=True)
     
-    # Artist name
-    st.markdown(f'<div class="artist-name">{artist_name.title()}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)  # Close image container
     
     # Listener count
     if show_listeners:
@@ -272,55 +350,131 @@ def main():
     """ + background_css + """
     
     .main-title {
-        font-size: 48px;
-        font-weight: bold;
+        font-size: 52px;
+        font-weight: 900;
         text-align: center;
-        color: #1f1f23;
-        margin-bottom: 10px;
+        color: #ffffff;
+        margin-bottom: 8px;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        letter-spacing: 2px;
     }
     .subtitle {
-        font-size: 24px;
+        font-size: 18px;
         text-align: center;
-        color: #6c757d;
-        margin-bottom: 30px;
+        color: #ffffff;
+        margin-bottom: 15px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        font-weight: 600;
     }
     .vs-text {
-        font-size: 32px;
-        font-weight: bold;
+        font-size: 42px;
+        font-weight: 900;
         text-align: center;
-        color: #007bff;
-        margin: 20px 0;
+        color: #ff4757;
+        margin-top: 150px;
+        padding: 10px 0;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        letter-spacing: 4px;
+        transition: all 0.5s ease;
+    }
+    
+    .vs-correct {
+        font-size: 60px;
+        color: #28a745;
+        text-shadow: 0 0 20px rgba(40, 167, 69, 0.7);
+        animation: correctPulse 1s ease-in-out;
+    }
+    
+    .vs-wrong {
+        font-size: 60px;
+        color: #dc3545;
+        text-shadow: 0 0 20px rgba(220, 53, 69, 0.7);
+        animation: wrongShake 0.8s ease-in-out;
+    }
+    
+    @keyframes correctPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes wrongShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-10px) rotate(-5deg); }
+        40%, 80% { transform: translateX(10px) rotate(5deg); }
     }
     .score-display {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: bold;
         text-align: center;
-        color: #28a745;
-        margin: 20px 0;
+        color: #ffffff;
+        margin: 10px 0;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 8px 20px;
+        border-radius: 20px;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+        display: inline-block;
+    }
+    .score-container {
+        text-align: center;
+        margin: 15px 0;
+    }
+    
+    /* Compact layout styles */
+    .stApp > div {
+        padding-top: 1rem;
+    }
+    
+    /* Make artist cards more compact */
+    .artist-card {
+        margin-bottom: 10px !important;
+    }
+    
+    /* Reduce spacing in main container */
+    .main > div {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Make columns more compact */
+    [data-testid="column"] {
+        padding: 0 0.5rem;
+    }
+    
+    /* Fixed image size 300x300 */
+    .stImage img {
+        width: 300px !important;
+        height: 300px !important;
+        object-fit: cover !important;
+        border-radius: 15px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
     }
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #ff4757, #ff3838);
         color: white;
         border: none;
-        border-radius: 25px;
-        padding: 15px 25px;
-        font-size: 18px;
-        font-weight: bold;
+        border-radius: 30px;
+        padding: 18px 25px;
+        font-size: 16px;
+        font-weight: 900;
         width: 100%;
-        height: 60px;
-        margin: 15px 0;
+        height: 65px;
+        margin: 8px 0;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
     .stButton > button:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        background: linear-gradient(135deg, #ff3838, #ff4757);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(255, 71, 87, 0.6);
     }
     .stButton > button:active {
-        transform: translateY(0px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -337,7 +491,7 @@ def main():
     display_responsive_ad(ad_type="header banner")
     
     # Show current score prominently
-    st.markdown(f'<div class="score-display">Puntaje: {st.session_state.score}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="score-container"><div class="score-display">Puntaje: {st.session_state.score}</div></div>', unsafe_allow_html=True)
     
     # Game over state
     if st.session_state.game_over:
@@ -377,6 +531,7 @@ def main():
         
         return
     
+
     # Select new artists if needed
     if st.session_state.current_artists is None:
         st.session_state.current_artists = select_random_artists()
@@ -410,7 +565,7 @@ def main():
                 st.session_state.game_over = True
                 st.session_state.last_guess_correct = False
                 st.rerun()
-    
+
     with col2:
         st.markdown('<div class="vs-text">VS</div>', unsafe_allow_html=True)
     
@@ -434,9 +589,9 @@ def main():
                 st.session_state.last_guess_correct = False
                 st.rerun()
     
-    # Game instructions
-    st.markdown("---")
-    st.markdown("**Cómo jugar:** Haz clic en el artista que crees que tiene más oyentes mensuales en Spotify. ¡Si aciertas sumas puntos, si fallas se termina el juego!")
+    # Game instructions with better contrast
+    st.markdown('<hr style="border: 1px solid rgba(255, 255, 255, 0.3); margin: 30px 0;">', unsafe_allow_html=True)
+    st.markdown('<div style="background: rgba(0, 0, 0, 0.7); color: white; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.2);"><strong>Cómo jugar:</strong> Haz clic en el artista que crees que tiene más oyentes mensuales en Spotify. ¡Si aciertas sumas puntos, si fallas se termina el juego!</div>', unsafe_allow_html=True)
     
     # Bottom Ad - Footer banner
     display_ad_banner(width=728, height=90, ad_type="footer")
@@ -448,17 +603,32 @@ def main():
             initialize_game()
             st.rerun()
     
-    # Footer with Instagram contact
-    st.markdown("---")
+    # Fixed Instagram link
     st.markdown(
         """
-        <div style="text-align: center; padding: 20px; color: #6c757d;">
-            <p>¿Te gusta el juego? 📱 <strong>Sígueme en Instagram:</strong> 
-            <a href="https://www.instagram.com/j040.fr/" target="_blank" style="color: #e1306c; text-decoration: none; font-weight: bold;">@j040.fr</a></p>
+        <div style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 25px;
+            z-index: 1000;
+            border: 1px solid #ff4757;
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        ">
+            📱 <a href="https://www.instagram.com/j040.fr/" target="_blank" style="color: #e1306c; text-decoration: none; font-weight: bold;">@j040.fr</a>
         </div>
         """, 
         unsafe_allow_html=True
     )
+    
+    # Footer with better contrast
+    st.markdown('<hr style="border: 1px solid rgba(255, 255, 255, 0.3); margin: 30px 0;">', unsafe_allow_html=True)
+    st.markdown('<div style="background: rgba(0, 0, 0, 0.6); color: white; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0;">¿Te gusta el juego? Follow o vendrá la popo 👀</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
