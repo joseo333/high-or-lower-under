@@ -152,6 +152,9 @@ def initialize_game():
     st.session_state.current_artists = None
     st.session_state.show_answer = False
     st.session_state.last_guess_correct = None
+    st.session_state.game_phase = "normal"  # normal, revealing, result, transition
+    st.session_state.selected_artist = None
+    st.session_state.reveal_start_time = None
 
 def select_random_artists():
     """Select two different random artists"""
@@ -160,7 +163,7 @@ def select_random_artists():
     return selected[0], selected[1]
 
 
-def display_artist(artist_name, show_listeners=False, is_button=False):
+def display_artist(artist_name, show_listeners=False, is_button=False, animate_new=False, animated_count=None):
     """Display artist information as a High or Lower style card"""
     artist_data = ARTISTS[artist_name]
     
@@ -168,14 +171,26 @@ def display_artist(artist_name, show_listeners=False, is_button=False):
     st.markdown("""
     <style>
     @keyframes slideIn {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: translateY(50px) rotateX(-10deg); }
+        to { opacity: 1; transform: translateY(0) rotateX(0deg); }
+    }
+    
+    @keyframes fadeInScale {
+        0% { opacity: 0; transform: scale(0.8) translateY(30px); }
+        50% { transform: scale(1.05) translateY(-5px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
     }
     
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.02); }
         100% { transform: scale(1); }
+    }
+    
+    @keyframes flipIn {
+        0% { opacity: 0; transform: rotateY(-90deg) scale(0.5); }
+        50% { transform: rotateY(-45deg) scale(1.1); }
+        100% { opacity: 1; transform: rotateY(0deg) scale(1); }
     }
     
     .artist-container {
@@ -185,9 +200,13 @@ def display_artist(artist_name, show_listeners=False, is_button=False):
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         margin: 15px 0;
         overflow: hidden;
-        animation: slideIn 0.6s ease-out;
+        animation: flipIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         transition: all 0.3s ease;
         backdrop-filter: blur(10px);
+    }
+    
+    .artist-container.new-round {
+        animation: fadeInScale 1s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     
     .artist-container:hover {
@@ -268,8 +287,9 @@ def display_artist(artist_name, show_listeners=False, is_button=False):
     </style>
     """, unsafe_allow_html=True)
     
-    # Start the card container
-    st.markdown('<div class="artist-container">', unsafe_allow_html=True)
+    # Start the card container with animation class
+    container_class = "artist-container new-round" if animate_new else "artist-container"
+    st.markdown(f'<div class="{container_class}">', unsafe_allow_html=True)
     
     # Artist name box (encima de la imagen)
     st.markdown(f'<div class="artist-name-box"><div class="artist-name">{artist_name.title()}</div></div>', unsafe_allow_html=True)
@@ -304,7 +324,11 @@ def display_artist(artist_name, show_listeners=False, is_button=False):
     
     # Listener count
     if show_listeners:
-        st.markdown(f'<div class="artist-listeners">{format_listeners(artist_data["listeners"])} oyentes mensuales</div>', unsafe_allow_html=True)
+        if animated_count is not None:
+            # Show animated counter
+            st.markdown(f'<div class="artist-listeners animated-counter">{format_listeners(animated_count)} oyentes mensuales</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="artist-listeners">{format_listeners(artist_data["listeners"])} oyentes mensuales</div>', unsafe_allow_html=True)
     else:
         st.markdown('<div class="artist-listeners-hidden">??? oyentes mensuales</div>', unsafe_allow_html=True)
     
@@ -375,34 +399,49 @@ def main():
         padding: 10px 0;
         text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
         letter-spacing: 4px;
-        transition: all 0.5s ease;
+        transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
     .vs-correct {
-        font-size: 60px;
         color: #28a745;
-        text-shadow: 0 0 20px rgba(40, 167, 69, 0.7);
-        animation: correctPulse 1s ease-in-out;
+        font-size: 50px;
+        text-shadow: 0 0 20px rgba(40, 167, 69, 0.8);
+        animation: correctBounce 1s ease-out;
     }
     
     .vs-wrong {
-        font-size: 60px;
         color: #dc3545;
-        text-shadow: 0 0 20px rgba(220, 53, 69, 0.7);
-        animation: wrongShake 0.8s ease-in-out;
+        font-size: 50px;
+        text-shadow: 0 0 20px rgba(220, 53, 69, 0.8);
+        animation: wrongShake 0.8s ease-out;
     }
     
-    @keyframes correctPulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.3); }
-        100% { transform: scale(1); }
+    .animated-counter {
+        animation: numberPulse 0.1s ease-in-out !important;
+        color: #ff4757 !important;
+        font-weight: 900 !important;
+    }
+    
+    @keyframes correctBounce {
+        0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+        50% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
     
     @keyframes wrongShake {
-        0%, 100% { transform: translateX(0); }
-        20%, 60% { transform: translateX(-10px) rotate(-5deg); }
-        40%, 80% { transform: translateX(10px) rotate(5deg); }
+        0% { transform: scale(0.3) translateX(0); opacity: 0; }
+        25% { transform: scale(1.2) translateX(-15px); opacity: 1; }
+        50% { transform: scale(1.2) translateX(15px); }
+        75% { transform: scale(1.2) translateX(-10px); }
+        100% { transform: scale(1) translateX(0); opacity: 1; }
     }
+    
+    @keyframes numberPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
     .score-display {
         font-size: 24px;
         font-weight: bold;
@@ -536,57 +575,137 @@ def main():
     if st.session_state.current_artists is None:
         st.session_state.current_artists = select_random_artists()
         st.session_state.show_answer = False
+        st.session_state.game_phase = "normal"
     
     artist1, artist2 = st.session_state.current_artists
+    
+    # Handle different game phases with automatic timing
+    import time
+    
+    if st.session_state.game_phase == "revealing":
+        # Initialize timer if not set
+        if st.session_state.reveal_start_time is None:
+            st.session_state.reveal_start_time = time.time()
+        
+        # Show revealing phase - numbers appear with animation
+        col1, col2, col3 = st.columns([5, 1, 5])
+        
+        with col1:
+            display_artist(artist1, show_listeners=True, animate_new=True)
+            
+        with col2:
+            st.markdown('<div class="vs-text">VS</div>', unsafe_allow_html=True)
+            
+        with col3:
+            display_artist(artist2, show_listeners=True, animate_new=True)
+        
+        # Auto-advance after 2 seconds
+        elapsed = time.time() - st.session_state.reveal_start_time
+        if elapsed > 2:
+            st.session_state.game_phase = "result"
+            st.session_state.result_start_time = time.time()
+            st.rerun()
+        else:
+            # Show countdown or progress
+            remaining = 2 - elapsed
+            st.markdown(f'<div style="text-align: center; color: white; font-size: 14px;">Revelando resultados... {remaining:.1f}s</div>', unsafe_allow_html=True)
+            time.sleep(0.1)
+            st.rerun()
+            
+    elif st.session_state.game_phase == "result":
+        # Initialize result timer if not set
+        if not hasattr(st.session_state, 'result_start_time') or st.session_state.result_start_time is None:
+            st.session_state.result_start_time = time.time()
+        
+        # Show final result with VS transformation
+        col1, col2, col3 = st.columns([5, 1, 5])
+        
+        with col1:
+            display_artist(artist1, show_listeners=True)
+            
+        with col2:
+            if st.session_state.last_guess_correct:
+                st.markdown('<div class="vs-text vs-correct">✓</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="vs-text vs-wrong">✗</div>', unsafe_allow_html=True)
+                
+        with col3:
+            display_artist(artist2, show_listeners=True)
+        
+        # Show result message and handle next steps
+        if st.session_state.last_guess_correct:
+            st.balloons()
+            st.markdown('<div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 15px; border-radius: 15px; text-align: center; font-size: 20px; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">🎉 ¡CORRECTO! +1 PUNTO</div>', unsafe_allow_html=True)
+            
+            # Auto-continue after 2.5 seconds
+            elapsed = time.time() - st.session_state.result_start_time
+            if elapsed > 2.5:
+                st.session_state.current_artists = select_random_artists()
+                st.session_state.game_phase = "normal"
+                st.session_state.reveal_start_time = None
+                st.session_state.result_start_time = None
+                st.rerun()
+            else:
+                remaining = 2.5 - elapsed
+                st.markdown(f'<div style="text-align: center; color: white; font-size: 14px;">Siguiente ronda en {remaining:.1f}s...</div>', unsafe_allow_html=True)
+                time.sleep(0.1)
+                st.rerun()
+        else:
+            st.markdown('<div style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 15px; border-radius: 15px; text-align: center; font-size: 20px; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);">❌ ¡INCORRECTO!</div>', unsafe_allow_html=True)
+            
+            # End game button
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("📊 Ver Resultado Final", key="end_game", type="primary", use_container_width=True):
+                    st.session_state.game_over = True
+                    st.session_state.game_phase = "normal"
+                    st.rerun()
+        
+        return
     
     # Mid-content Ad - Every 3 points
     if st.session_state.score > 0 and st.session_state.score % 3 == 0:
         display_responsive_ad(ad_type="mid-content")
     
-    # Display the two artists in a vs format
-    col1, col2, col3 = st.columns([5, 1, 5])
-    
-    with col1:
-        display_artist(artist1)
-        if st.button(f"⬆️ {artist1.title()} TIENE MÁS", key="artist1", type="primary", use_container_width=True):
-            # Check if guess is correct
-            listeners1 = ARTISTS[artist1]["listeners"]
-            listeners2 = ARTISTS[artist2]["listeners"]
-            
-            if listeners1 > listeners2:
-                st.session_state.score += 1
-                st.session_state.last_guess_correct = True
-                # Select new artists for next round
-                st.session_state.current_artists = select_random_artists()
-                st.balloons()
-                st.markdown('<div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 15px; border-radius: 15px; text-align: center; font-size: 20px; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">🎉 ¡CORRECTO! +1 PUNTO</div>', unsafe_allow_html=True)
-                st.rerun()
-            else:
-                st.session_state.game_over = True
-                st.session_state.last_guess_correct = False
+    # Normal game phase - show selection buttons
+    if st.session_state.game_phase == "normal":
+        col1, col2, col3 = st.columns([5, 1, 5])
+        
+        with col1:
+            display_artist(artist1)
+            if st.button(f"⬆️ {artist1.title()} TIENE MÁS", key="artist1", type="primary", use_container_width=True):
+                # Start revealing phase
+                listeners1 = ARTISTS[artist1]["listeners"]
+                listeners2 = ARTISTS[artist2]["listeners"]
+                
+                st.session_state.selected_artist = artist1
+                st.session_state.last_guess_correct = listeners1 > listeners2
+                st.session_state.game_phase = "revealing"
+                st.session_state.reveal_start_time = None
+                
+                if st.session_state.last_guess_correct:
+                    st.session_state.score += 1
+                
                 st.rerun()
 
-    with col2:
-        st.markdown('<div class="vs-text">VS</div>', unsafe_allow_html=True)
-    
-    with col3:
-        display_artist(artist2)
-        if st.button(f"⬆️ {artist2.title()} TIENE MÁS", key="artist2", type="primary", use_container_width=True):
-            # Check if guess is correct
-            listeners1 = ARTISTS[artist1]["listeners"]
-            listeners2 = ARTISTS[artist2]["listeners"]
-            
-            if listeners2 > listeners1:
-                st.session_state.score += 1
-                st.session_state.last_guess_correct = True
-                # Select new artists for next round
-                st.session_state.current_artists = select_random_artists()
-                st.balloons()
-                st.markdown('<div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 15px; border-radius: 15px; text-align: center; font-size: 20px; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">🎉 ¡CORRECTO! +1 PUNTO</div>', unsafe_allow_html=True)
-                st.rerun()
-            else:
-                st.session_state.game_over = True
-                st.session_state.last_guess_correct = False
+        with col2:
+            st.markdown('<div class="vs-text">VS</div>', unsafe_allow_html=True)
+        
+        with col3:
+            display_artist(artist2)
+            if st.button(f"⬆️ {artist2.title()} TIENE MÁS", key="artist2", type="primary", use_container_width=True):
+                # Start revealing phase
+                listeners1 = ARTISTS[artist1]["listeners"]
+                listeners2 = ARTISTS[artist2]["listeners"]
+                
+                st.session_state.selected_artist = artist2
+                st.session_state.last_guess_correct = listeners2 > listeners1
+                st.session_state.game_phase = "revealing"
+                st.session_state.reveal_start_time = None
+                
+                if st.session_state.last_guess_correct:
+                    st.session_state.score += 1
+                
                 st.rerun()
     
     # Game instructions with better contrast
