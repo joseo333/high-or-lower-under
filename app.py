@@ -527,7 +527,7 @@ def main():
         initialize_game()
     
     # Header Ad - Top banner
-    display_responsive_ad(ad_type="header banner")
+    # display_responsive_ad(ad_type="header banner")
     
     # Show current score prominently
     st.markdown(f'<div class="score-container"><div class="score-display">Puntaje: {st.session_state.score}</div></div>', unsafe_allow_html=True)
@@ -664,8 +664,8 @@ def main():
         return
     
     # Mid-content Ad - Every 3 points
-    if st.session_state.score > 0 and st.session_state.score % 3 == 0:
-        display_responsive_ad(ad_type="mid-content")
+    # if st.session_state.score > 0 and st.session_state.score % 3 == 0:
+    #     display_responsive_ad(ad_type="mid-content")
     
     # Normal game phase - show selection buttons
     if st.session_state.game_phase == "normal":
@@ -713,7 +713,7 @@ def main():
     st.markdown('<div style="background: rgba(0, 0, 0, 0.7); color: white; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.2);"><strong>Cómo jugar:</strong> Haz clic en el artista que crees que tiene más oyentes mensuales en Spotify. ¡Si aciertas sumas puntos, si fallas se termina el juego!</div>', unsafe_allow_html=True)
     
     # Bottom Ad - Footer banner
-    display_ad_banner(width=728, height=90, ad_type="footer")
+    # display_ad_banner(width=728, height=90, ad_type="footer")
     
     # Reset game button
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -727,7 +727,7 @@ def main():
         """
         <div style="
             position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             right: 20px;
             background: rgba(0, 0, 0, 0.8);
             color: white;
